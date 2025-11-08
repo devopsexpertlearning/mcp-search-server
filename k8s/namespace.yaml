@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mcp-browser-search
+  labels:
+    name: mcp-browser-search
+    app.kubernetes.io/name: mcp-browser-search
+    app.kubernetes.io/version: "2.0.0"

@@ -1,0 +1,192 @@
+{{- if .Values.mcpServers.ollama.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-browser-search.fullname" . }}-ollama
+  labels:
+    {{- include "mcp-browser-search.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ollama-server
+spec:
+  replicas: {{ .Values.mcpServers.ollama.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mcp-browser-search.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ollama-server
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-browser-search.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ollama-server
+    spec:
+      containers:
+      - name: mcp-ollama
+        image: "{{ .Values.image.registry }}/{{ .Values.mcpServers.ollama.image.repository }}:{{ .Values.mcpServers.ollama.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["node", "dist/servers/OllamaServer.js"]
+        ports:
+        - containerPort: {{ .Values.service.ports.http }}
+          protocol: TCP
+        env:
+        - name: OLLAMA_BASE_URL
+          value: "http://{{ include "mcp-browser-search.fullname" . }}-ollama-service:11434"
+        - name: REDIS_URL
+          value: "redis://{{ include "mcp-browser-search.fullname" . }}-redis:6379"
+        {{- range $key, $value := .Values.mcpServers.ollama.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.mcpServers.ollama.resources | nindent 10 }}
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+      - name: logs
+        emptyDir: {}
+      {{- with .Values.nodeAffinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+---
+{{- if .Values.mcpServers.enhanced.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-browser-search.fullname" . }}-enhanced
+  labels:
+    {{- include "mcp-browser-search.labels" . | nindent 4 }}
+    app.kubernetes.io/component: enhanced-server
+spec:
+  replicas: {{ .Values.mcpServers.enhanced.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mcp-browser-search.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: enhanced-server
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-browser-search.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: enhanced-server
+    spec:
+      containers:
+      - name: mcp-enhanced
+        image: "{{ .Values.image.registry }}/{{ .Values.mcpServers.enhanced.image.repository }}:{{ .Values.mcpServers.enhanced.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["node", "dist/servers/EnhancedServer.js"]
+        ports:
+        - containerPort: {{ .Values.service.ports.http }}
+          protocol: TCP
+        env:
+        - name: REDIS_URL
+          value: "redis://{{ include "mcp-browser-search.fullname" . }}-redis:6379"
+        {{- range $key, $value := .Values.mcpServers.enhanced.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.mcpServers.enhanced.resources | nindent 10 }}
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+      - name: logs
+        emptyDir: {}
+{{- end }}
+
+---
+{{- if .Values.mcpServers.fallback.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-browser-search.fullname" . }}-fallback
+  labels:
+    {{- include "mcp-browser-search.labels" . | nindent 4 }}
+    app.kubernetes.io/component: fallback-server
+spec:
+  replicas: {{ .Values.mcpServers.fallback.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mcp-browser-search.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: fallback-server
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-browser-search.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: fallback-server
+    spec:
+      containers:
+      - name: mcp-fallback
+        image: "{{ .Values.image.registry }}/{{ .Values.mcpServers.fallback.image.repository }}:{{ .Values.mcpServers.fallback.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["node", "dist/servers/FallbackServer.js"]
+        ports:
+        - containerPort: {{ .Values.service.ports.http }}
+          protocol: TCP
+        env:
+        {{- range $key, $value := .Values.mcpServers.fallback.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.mcpServers.fallback.resources | nindent 10 }}
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+      - name: logs
+        emptyDir: {}
+{{- end }}

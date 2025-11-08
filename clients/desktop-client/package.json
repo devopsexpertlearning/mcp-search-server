@@ -1,0 +1,90 @@
+{
+  "name": "mcp-browser-search-desktop",
+  "version": "1.0.0",
+  "description": "Desktop application for MCP Browser Search with Ollama integration",
+  "main": "dist/main.js",
+  "homepage": "./",
+  "scripts": {
+    "build": "tsc && npm run build:react",
+    "build:react": "cd src/renderer && npm run build",
+    "dev": "concurrently \"tsc --watch\" \"npm run dev:react\" \"wait-on dist/main.js && electron .\"",
+    "dev:react": "cd src/renderer && npm start",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:all": "electron-builder -mwl",
+    "postinstall": "cd src/renderer && npm install"
+  },
+  "build": {
+    "appId": "com.mcp.browser-search",
+    "productName": "MCP Browser Search",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src/renderer/build/**/*",
+      "assets/**/*",
+      "!src/**/*",
+      "!tsconfig.json",
+      "!*.md"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        }
+      ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.1.4",
+    "log4js": "^6.9.1"
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "typescript": "^5.2.0",
+    "@types/node": "^20.8.0",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ollama",
+    "browser-search",
+    "desktop",
+    "electron"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

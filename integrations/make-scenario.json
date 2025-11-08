@@ -1,0 +1,243 @@
+{
+  "name": "MCP Browser Search Integration",
+  "description": "Make.com scenario template for MCP Browser Search Server integration",
+  "version": "1.0.0",
+  "modules": [
+    {
+      "id": 1,
+      "module": "webhook:webhook",
+      "version": 1,
+      "parameters": {
+        "hook": "search_trigger",
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 2,
+      "module": "util:SetVariable2",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "name": "search_query",
+        "scope": "roundtrip",
+        "value": "{{1.query}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 3,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+      },
+      "mapper": {
+        "url": "{{1.mcp_server_url}}/search",
+        "method": "post",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "qs": [],
+        "bodyType": "raw",
+        "parseResponse": true,
+        "authUser": "",
+        "authPass": "",
+        "timeout": "300",
+        "shareCookies": false,
+        "ca": "",
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "followAllRedirects": false,
+        "gzip": true,
+        "useMtls": false,
+        "contentType": "application/json",
+        "data": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": {{1.id}},\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"search_web_fallback\",\n    \"arguments\": {\n      \"query\": \"{{2.search_query}}\",\n      \"engine\": \"{{1.engine}}\",\n      \"max_results\": {{1.max_results}}\n    }\n  }\n}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "util:SetVariable2",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "name": "search_results",
+        "scope": "roundtrip",
+        "value": "{{parseJSON(3.data.result.content.1.text)}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "routes": [
+          {
+            "condition": "{{length(4.search_results) > 0}}",
+            "label": "Has Results"
+          },
+          {
+            "condition": "{{length(4.search_results) = 0}}",
+            "label": "No Results"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 1200,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 6,
+      "module": "util:SetVariable2",
+      "version": 1,
+      "parameters": {},
+      "filter": {
+        "operator": "and",
+        "conditions": [
+          {
+            "a": "{{5.route}}",
+            "b": "Has Results",
+            "o": "text:equal"
+          }
+        ]
+      },
+      "mapper": {
+        "name": "formatted_results",
+        "scope": "roundtrip",
+        "value": "{{map(4.search_results; \"title\" + \": \" + \"url\" + \"\\n\" + \"snippet\" + \"\\n\\n\")}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 1500,
+          "y": -200
+        }
+      }
+    },
+    {
+      "id": 7,
+      "module": "webhook:webhookRespond",
+      "version": 1,
+      "parameters": {},
+      "filter": {
+        "operator": "and",
+        "conditions": [
+          {
+            "a": "{{5.route}}",
+            "b": "Has Results",
+            "o": "text:equal"
+          }
+        ]
+      },
+      "mapper": {
+        "status": "200",
+        "body": "{\n  \"success\": true,\n  \"query\": \"{{2.search_query}}\",\n  \"results_count\": {{length(4.search_results)}},\n  \"results\": {{4.search_results}},\n  \"formatted\": \"{{join(6.formatted_results; \"\")}}\"\n}",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 1800,
+          "y": -200
+        }
+      }
+    },
+    {
+      "id": 8,
+      "module": "webhook:webhookRespond",
+      "version": 1,
+      "parameters": {},
+      "filter": {
+        "operator": "and",
+        "conditions": [
+          {
+            "a": "{{5.route}}",
+            "b": "No Results",
+            "o": "text:equal"
+          }
+        ]
+      },
+      "mapper": {
+        "status": "200",
+        "body": "{\n  \"success\": false,\n  \"query\": \"{{2.search_query}}\",\n  \"message\": \"No search results found\",\n  \"results_count\": 0\n}",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 1800,
+          "y": 200
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": false,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    },
+    "zone": "us1.make.com"
+  },
+  "notes": [
+    {
+      "id": "note1",
+      "text": "MCP Browser Search Integration\n\nThis scenario receives search requests via webhook and processes them through the MCP Browser Search Server.\n\nWebhook expects:\n- query: Search query string\n- engine: Search engine (optional, defaults to duckduckgo)\n- max_results: Maximum results (optional, defaults to 10)\n- mcp_server_url: URL of your MCP server (or use local path)\n- id: Request ID for tracking\n\nResponse includes:\n- Formatted search results\n- Result count\n- Success/failure status",
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": -400
+        }
+      }
+    }
+  ]
+}

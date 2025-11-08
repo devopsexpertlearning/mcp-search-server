@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-ollama-service
+  namespace: mcp-browser-search
+  labels:
+    app: mcp-ollama
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: mcp-ollama
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-enhanced-service
+  namespace: mcp-browser-search
+  labels:
+    app: mcp-enhanced
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: mcp-enhanced
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-fallback-service
+  namespace: mcp-browser-search
+  labels:
+    app: mcp-fallback
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: mcp-fallback
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-browser-search-service
+  namespace: mcp-browser-search
+  labels:
+    app: mcp-browser-search
+    component: load-balancer
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: https
+  selector:
+    app: nginx

@@ -1,0 +1,79 @@
+{
+  "mcpServers": {
+    "browser-search-ollama": {
+      "command": "node",
+      "args": ["./dist/servers/OllamaServer.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "OLLAMA_BASE_URL": "http://localhost:11434",
+        "OLLAMA_DEFAULT_MODEL": "llama2",
+        "CACHE_TTL": "7200000",
+        "MAX_SEARCH_RESULTS": "20",
+        "SEARCH_TIMEOUT": "30000"
+      }
+    },
+    "browser-search-enhanced": {
+      "command": "node",
+      "args": ["./dist/servers/EnhancedServer.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "CACHE_TTL": "3600000",
+        "MAX_SEARCH_RESULTS": "15"
+      }
+    },
+    "browser-search-fallback": {
+      "command": "node",
+      "args": ["./dist/servers/FallbackServer.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "warn"
+      }
+    }
+  },
+  "ollama": {
+    "baseUrl": "http://localhost:11434",
+    "defaultModel": "llama2",
+    "models": [
+      "llama2",
+      "mistral",
+      "codellama"
+    ],
+    "timeout": 30000,
+    "maxRetries": 3
+  },
+  "search": {
+    "engines": ["duckduckgo", "bing", "google"],
+    "defaultEngine": "duckduckgo",
+    "maxResults": 20,
+    "timeout": 30000,
+    "userAgent": "MCP-Browser-Search/2.0.0"
+  },
+  "cache": {
+    "ttl": 3600000,
+    "maxSize": 1000,
+    "redis": {
+      "enabled": true,
+      "url": "redis://localhost:6379",
+      "prefix": "mcp:search:",
+      "maxRetries": 3
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "metricsPath": "/metrics",
+    "healthPath": "/health"
+  },
+  "security": {
+    "rateLimiting": {
+      "enabled": true,
+      "windowMs": 900000,
+      "maxRequests": 100
+    },
+    "cors": {
+      "enabled": true,
+      "origin": ["http://localhost:3000", "https://yourdomain.com"]
+    }
+  }
+}

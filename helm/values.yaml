@@ -1,0 +1,284 @@
+# Default values for mcp-browser-search
+# This is a YAML-formatted file.
+
+# Global settings
+global:
+  imageRegistry: ""
+  storageClass: "fast-ssd"
+  
+# Application configuration
+app:
+  name: mcp-browser-search
+  version: "2.0.0"
+
+# Image configuration
+image:
+  registry: docker.io
+  repository: mcp-browser-search
+  tag: "2.0.0"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    http: 3000
+    https: 3443
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: mcp-search.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: mcp-search-tls
+      hosts:
+        - mcp-search.yourdomain.com
+
+# MCP Server configurations
+mcpServers:
+  # Ollama-integrated server
+  ollama:
+    enabled: true
+    replicas: 2
+    image:
+      repository: mcp-browser-search
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+    env:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      OLLAMA_DEFAULT_MODEL: "llama2"
+      CACHE_TTL: "7200000"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  # Enhanced server
+  enhanced:
+    enabled: true
+    replicas: 3
+    image:
+      repository: mcp-browser-search
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+    env:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      CACHE_TTL: "3600000"
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 15
+      targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
+
+  # Fallback server
+  fallback:
+    enabled: true
+    replicas: 2
+    image:
+      repository: mcp-browser-search
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    env:
+      NODE_ENV: production
+      LOG_LEVEL: info
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 50
+      targetMemoryUtilizationPercentage: 70
+
+# Ollama configuration
+ollama:
+  enabled: true
+  image:
+    repository: ollama/ollama
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      memory: "4Gi"
+      cpu: "1000m"
+      nvidia.com/gpu: "1"
+    limits:
+      memory: "16Gi"
+      cpu: "4000m"
+      nvidia.com/gpu: "1"
+  
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 50Gi
+    modelSize: 100Gi
+  
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+
+  env:
+    OLLAMA_HOST: "0.0.0.0"
+    OLLAMA_MODELS: "/root/.ollama/models"
+    OLLAMA_KEEP_ALIVE: "24h"
+    OLLAMA_MAX_LOADED_MODELS: "3"
+
+# Redis configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "redis-password-change-this"
+  master:
+    persistence:
+      enabled: true
+      storageClass: "fast-ssd"
+      size: 20Gi
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  
+  prometheus:
+    enabled: true
+    persistence:
+      enabled: true
+      storageClass: "fast-ssd"
+      size: 50Gi
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  
+  grafana:
+    enabled: true
+    persistence:
+      enabled: true
+      storageClass: "fast-ssd"
+      size: 10Gi
+    adminPassword: "admin123"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+
+# Security configuration
+security:
+  podSecurityPolicy:
+    enabled: false
+  networkPolicy:
+    enabled: true
+  
+  rbac:
+    enabled: true
+  
+  secrets:
+    redis:
+      password: "redis-password-change-this"
+    ollama:
+      apiKey: "ollama-api-key-change-this"
+    jwt:
+      secret: "jwt-secret-change-this"
+
+# Load balancer configuration
+loadBalancer:
+  nginx:
+    enabled: true
+    replicas: 2
+    image:
+      repository: nginx
+      tag: "alpine"
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    
+    ssl:
+      enabled: true
+      certificate: ""  # Base64 encoded certificate
+      privateKey: ""   # Base64 encoded private key
+
+# Storage configuration
+storage:
+  storageClass: "fast-ssd"
+  
+  ollama:
+    size: 50Gi
+    modelSize: 100Gi
+  
+  redis:
+    size: 20Gi
+  
+  prometheus:
+    size: 50Gi
+  
+  grafana:
+    size: 10Gi
+
+# Node affinity and tolerations
+nodeAffinity: {}
+tolerations: []
+affinity: {}
+
+# Pod disruption budgets
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Backup configuration
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  retention: "30d"

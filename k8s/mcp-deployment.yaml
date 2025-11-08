@@ -1,0 +1,221 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-ollama
+  namespace: mcp-browser-search
+  labels:
+    app: mcp-ollama
+    component: search-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-ollama
+  template:
+    metadata:
+      labels:
+        app: mcp-ollama
+        component: search-server
+    spec:
+      containers:
+      - name: mcp-ollama
+        image: mcp-browser-search:latest
+        imagePullPolicy: IfNotPresent
+        command: ["node", "dist/servers/OllamaServer.js"]
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: mcp-config
+        env:
+        - name: OLLAMA_BASE_URL
+          value: "http://ollama-service:11434"
+        - name: OLLAMA_DEFAULT_MODEL
+          value: "llama2"
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mcp-secrets
+              key: REDIS_PASSWORD
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: cache
+          mountPath: /app/cache
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-enhanced
+  namespace: mcp-browser-search
+  labels:
+    app: mcp-enhanced
+    component: search-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mcp-enhanced
+  template:
+    metadata:
+      labels:
+        app: mcp-enhanced
+        component: search-server
+    spec:
+      containers:
+      - name: mcp-enhanced
+        image: mcp-browser-search:latest
+        imagePullPolicy: IfNotPresent
+        command: ["node", "dist/servers/EnhancedServer.js"]
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: mcp-config
+        env:
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mcp-secrets
+              key: REDIS_PASSWORD
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: cache
+          mountPath: /app/cache
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-fallback
+  namespace: mcp-browser-search
+  labels:
+    app: mcp-fallback
+    component: search-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-fallback
+  template:
+    metadata:
+      labels:
+        app: mcp-fallback
+        component: search-server
+    spec:
+      containers:
+      - name: mcp-fallback
+        image: mcp-browser-search:latest
+        imagePullPolicy: IfNotPresent
+        command: ["node", "dist/servers/FallbackServer.js"]
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: mcp-config
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: logs
+        emptyDir: {}

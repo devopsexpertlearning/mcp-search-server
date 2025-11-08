@@ -1,0 +1,53 @@
+# Development files
+src/
+test-*.js
+.tscache
+*.log
+.DS_Store
+
+# Build artifacts  
+.nyc_output
+coverage/
+*.tgz
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated
+Thumbs.db
+ehthumbs.db
+
+# Dependencies (will be installed from package.json)
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+.circleci/
+.travis.yml
+
+# Documentation source (keep built docs)
+docs/source/
+
+# Testing
+test/
+tests/
+__tests__/
+spec/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp

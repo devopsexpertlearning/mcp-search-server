@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # Ollama Server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-server
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./ollama-config:/app/config:ro
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODELS=/root/.ollama/models
+    networks:
+      - ollama-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # MCP Browser Search with Ollama Integration
+  mcp-search-ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-search-ollama
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_DEFAULT_MODEL=llama2
+      - CACHE_TTL=3600000
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./logs:/app/logs
+      - cache-data:/app/cache
+    networks:
+      - ollama-network
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: ["node", "dist/servers/OllamaServer.js"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('Health check')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MCP Enhanced Server (without Ollama)
+  mcp-search-enhanced:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-search-enhanced
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - CACHE_TTL=3600000
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./logs:/app/logs
+      - cache-data:/app/cache
+    networks:
+      - ollama-network
+    command: ["node", "dist/servers/EnhancedServer.js"]
+
+  # Web UI for Ollama (Optional)
+  ollama-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ollama-webui
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_SECRET_KEY=your-secret-key-change-this
+    volumes:
+      - webui-data:/app/backend/data
+    networks:
+      - ollama-network
+    depends_on:
+      - ollama
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: ollama-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - ollama-network
+    command: redis-server --appendonly yes
+
+  # Nginx reverse proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: ollama-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - ollama-network
+    depends_on:
+      - mcp-search-ollama
+      - mcp-search-enhanced
+      - ollama-webui
+
+volumes:
+  ollama_data:
+    driver: local
+  cache-data:
+    driver: local
+  redis-data:
+    driver: local
+  webui-data:
+    driver: local
+
+networks:
+  ollama-network:
+    driver: bridge
+    name: ollama-network

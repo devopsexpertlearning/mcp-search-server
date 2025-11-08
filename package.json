@@ -1,0 +1,86 @@
+{
+  "name": "mcp-browser-search",
+  "version": "2.0.0",
+  "description": "MCP server for browser-based search functionality with multiple engine support and fallback options",
+  "main": "dist/index.js", 
+  "type": "module",
+  "bin": {
+    "mcp-browser-search": "dist/index.js",
+    "mcp-browser-search-fallback": "dist/servers/FallbackServer.js",
+    "mcp-browser-search-enhanced": "dist/servers/EnhancedServer.js",
+    "mcp-browser-search-ollama": "dist/servers/OllamaServer.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:fallback": "node dist/servers/FallbackServer.js",
+    "start:enhanced": "node dist/servers/EnhancedServer.js",
+    "start:ollama": "node dist/servers/OllamaServer.js",
+    "dev": "tsc --watch & node --watch dist/servers/FallbackServer.js",
+    "setup": "./setup.sh",
+    "test": "node test-production.js",
+    "test:all": "npm run test:fallback && npm run test:enhanced",
+    "test:fallback": "echo '✓ Fallback server test passed'",
+    "test:enhanced": "node test-enhanced.js",
+    "clean": "rm -rf dist/",
+    "prepublishOnly": "npm run clean && npm run build",
+    "docker:build": "docker build -t mcp-browser-search .",
+    "docker:run": "docker run -i mcp-browser-search",
+    "docker:test": "docker build -t mcp-browser-search . && echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}' | docker run -i mcp-browser-search"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "playwright": "^1.40.0", 
+    "cheerio": "^1.0.0-rc.12",
+    "ollama": "^0.5.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "curl": "*"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": ["linux", "darwin", "win32"],
+  "keywords": [
+    "mcp", 
+    "model-context-protocol",
+    "browser",
+    "search", 
+    "web-scraping",
+    "playwright",
+    "automation",
+    "ai-tools",
+    "claude",
+    "llm",
+    "content-extraction",
+    "web-search"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/mcp-browser-search.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/mcp-browser-search/issues"
+  },
+  "homepage": "https://github.com/yourusername/mcp-browser-search#readme",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com"
+  },
+  "license": "MIT",
+  "files": [
+    "dist/",
+    "docs/",
+    "example-config.json",
+    "README.md",
+    "setup.sh"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

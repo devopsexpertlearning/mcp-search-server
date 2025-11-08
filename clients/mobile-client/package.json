@@ -1,0 +1,65 @@
+{
+  "name": "mcp-browser-search-mobile",
+  "version": "1.0.0",
+  "description": "React Native mobile app for MCP Browser Search with Ollama integration",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "jest",
+    "build:android": "cd android && ./gradlew assembleRelease",
+    "build:ios": "cd ios && xcodebuild -workspace MCPBrowserSearch.xcworkspace -scheme MCPBrowserSearch -configuration Release -destination generic/platform=iOS -archivePath MCPBrowserSearch.xcarchive archive"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.19.0",
+    "@react-native-community/netinfo": "^9.4.1",
+    "@react-navigation/native": "^6.1.7",
+    "@react-navigation/bottom-tabs": "^6.5.8",
+    "@react-navigation/native-stack": "^6.9.13",
+    "react": "18.2.0",
+    "react-native": "0.72.0",
+    "react-native-gesture-handler": "^2.12.1",
+    "react-native-reanimated": "^3.3.0",
+    "react-native-safe-area-context": "^4.7.1",
+    "react-native-screens": "^3.22.1",
+    "react-native-vector-icons": "^10.0.0",
+    "react-native-webview": "^13.2.2",
+    "react-native-paper": "^5.10.0",
+    "react-native-markdown-display": "^7.0.0",
+    "react-query": "^3.39.3",
+    "socket.io-client": "^4.7.2",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@babel/preset-env": "^7.20.0",
+    "@babel/runtime": "^7.20.0",
+    "@react-native/eslint-config": "^0.72.0",
+    "@react-native/metro-config": "^0.72.0",
+    "@tsconfig/react-native": "^3.0.0",
+    "@types/react": "^18.0.24",
+    "@types/react-test-renderer": "^18.0.0",
+    "babel-jest": "^29.2.1",
+    "eslint": "^8.19.0",
+    "jest": "^29.2.1",
+    "metro-react-native-babel-preset": "0.76.5",
+    "prettier": "^2.4.1",
+    "react-test-renderer": "18.2.0",
+    "typescript": "4.8.4"
+  },
+  "jest": {
+    "preset": "react-native"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ollama",
+    "browser-search",
+    "mobile",
+    "react-native"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
