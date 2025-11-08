@@ -299,6 +299,119 @@ Create `config.json`:
 
 ---
 
+## ✅ Testing & Validation
+
+### Quick Test Commands
+
+After building the project, you can test the MCP server functionality using these methods:
+
+#### Method 1: Test Tools List
+```bash
+# List all available tools
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | node dist/index.js
+```
+
+#### Method 2: Test Web Search (Fallback Server - Recommended)
+```bash
+# Start fallback server (works without browser dependencies)
+npm run start:fallback &
+
+# Test search functionality
+echo '{"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "search_web_fallback", "arguments": {"query": "hello world", "engine": "duckduckgo", "max_results": 3}}}' | node dist/servers/FallbackServer.js
+```
+
+#### Method 3: Test Full Browser Server
+```bash
+# Install browser dependencies first
+npx playwright install
+
+# Test with full browser server
+echo '{"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "search_web", "arguments": {"query": "test search", "engine": "duckduckgo", "max_results": 3}}}' | node dist/index.js
+```
+
+#### Method 4: Test Page Visit
+```bash
+# Test content extraction
+echo '{"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "visit_page_fallback", "arguments": {"url": "https://example.com"}}}' | node dist/servers/FallbackServer.js
+```
+
+### Expected Successful Response
+```json
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[\n  {\n    \"title\": \"Example Result\",\n    \"url\": \"https://example.com\",\n    \"snippet\": \"Description of the result\",\n    \"domain\": \"example.com\"\n  }\n]"
+      }
+    ]
+  }
+}
+```
+
+### Testing Different Server Types
+
+```bash
+# Test Enhanced Server
+npm run start:enhanced &
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | node dist/servers/EnhancedServer.js
+
+# Test Fallback Server (No browser required)
+npm run start:fallback &
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | node dist/servers/FallbackServer.js
+
+# Test Ollama Server
+npm run start:ollama &
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | node dist/servers/OllamaServer.js
+```
+
+### Interactive Testing Script
+
+Create `test_mcp.js`:
+```javascript
+const { spawn } = require('child_process');
+
+const mcpServer = spawn('node', ['dist/servers/FallbackServer.js'], {
+  stdio: ['pipe', 'pipe', 'pipe']
+});
+
+const testMessages = [
+  { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} },
+  { 
+    jsonrpc: "2.0", 
+    id: 2, 
+    method: "tools/call", 
+    params: { 
+      name: "search_web_fallback", 
+      arguments: { query: "test", max_results: 2 } 
+    } 
+  }
+];
+
+mcpServer.stdout.on('data', (data) => {
+  console.log('MCP Response:', data.toString());
+});
+
+mcpServer.stderr.on('data', (data) => {
+  console.error('MCP Error:', data.toString());
+});
+
+testMessages.forEach((msg, i) => {
+  setTimeout(() => {
+    console.log(`Sending: ${JSON.stringify(msg)}`);
+    mcpServer.stdin.write(JSON.stringify(msg) + '\n');
+  }, i * 1000);
+});
+
+setTimeout(() => {
+  mcpServer.kill();
+}, 5000);
+```
+
+Run with: `node test_mcp.js`
+
+---
+
 ## 🧪 Testing
 
 ### Run Tests
@@ -374,12 +487,65 @@ npx playwright install
 
 # Check browser dependencies
 npx playwright install-deps
+
+# If Playwright installation fails, use fallback server
+npm run start:fallback
+```
+
+**MCP Testing Issues:**
+
+*"No response from MCP server"*
+```bash
+# Check if server is running
+ps aux | grep node
+
+# Test basic connectivity
+echo '{"jsonrpc": "2.0", "id": 1, "method": "ping"}' | node dist/index.js
+```
+
+*"Tool not found" errors*
+```bash
+# List available tools first
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | node dist/servers/FallbackServer.js
+
+# Use correct tool names:
+# - search_web_fallback (for fallback server)
+# - search_web (for full browser server)  
+# - visit_page_fallback (for fallback server)
+```
+
+*"browserType.launch: Executable doesn't exist" error*
+```bash
+# This means Playwright browsers aren't installed
+# Solution 1: Install browsers
+npx playwright install
+
+# Solution 2: Use fallback server instead
+npm run start:fallback
+```
+
+*"Search returns no results"*
+```bash
+# Try different search engines
+echo '{"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "search_web_fallback", "arguments": {"query": "test", "engine": "bing"}}}' | node dist/servers/FallbackServer.js
+
+# Check network connectivity
+curl -I https://duckduckgo.com
 ```
 
 **Memory Issues:**
 ```bash
 # Increase Node.js memory limit
 NODE_OPTIONS="--max-old-space-size=4096" npm start
+```
+
+**Port Conflicts:**
+```bash
+# Check what's using the port
+lsof -i :3000
+
+# Kill conflicting processes
+pkill -f "node.*mcp"
 ```
 
 ### Debug Mode
