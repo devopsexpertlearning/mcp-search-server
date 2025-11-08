@@ -33,7 +33,7 @@ A comprehensive Model Context Protocol (MCP) server providing advanced web searc
 
 ```bash
 # Clone and set up locally
-git clone <repository-url>
+git clone https://github.com/devopsexpertlearning/mcp-search-server/tree/main
 cd mcp-browser-search
 
 # Install dependencies
